@@ -1,0 +1,271 @@
+import time
+class jogodavelha:
+ def __init__(self):
+  global estado_jogo
+  #A fim de manter na memória o estado do jogo, utilizamos uma matriz preenchida de:
+  #0 se o quadrado estiver vazio, 1 se o quadrado for ocupado por uma jogada do PC 
+  #e 2 se o quadrado for ocupado por uma jogada do jogador. (3 x 3)
+  estado_jogo = [[0,0,0], [0,0,0], [0,0,0]]
+  #Variável que armazena todas as possíveis sequências de posições que levam à vitória do jogo.
+  self.end_estado_jogo = [[(0,0),(0,1),(0,2)],[(1,0),(1,1),(1,2)],[(2,0),(2,1),(2,2)],
+          [(0,0),(1,0),(2,0)],[(0,1),(1,1),(2,1)],[(0,2),(1,2),(2,2)],
+          [(0,0),(1,1),(2,2)],[(0,2),(1,1),(2,0)]]
+ 
+ 
+ def getMovimentosValidos(self,tabuleiro):
+  #Analisa o tabuleiro e retorna as posições que ainda estão vazias.
+  possiveis_movimentos = list()
+  for i in range(3):
+   for j in range(3):
+    if tabuleiro[i][j] == 0:
+     possiveis_movimentos.append((i, j))
+  return possiveis_movimentos
+ 
+ def resultado(self, tabuleiro):
+  #Verifica o estado final do tabuleiro:
+  # (+1 Vitória do PC, -1 Vitória do Humano, 0 Empate)
+  linhas_vitoria = list(self.end_estado_jogo)
+  vencedor = None
+  for linha in linhas_vitoria:
+   linha_vencedora = [tabuleiro[x][y] for x,y in linha]
+   if linha_vencedora == [1, 1, 1]:
+    vencedor = 1
+    break
+   elif linha_vencedora == [2, 2, 2]:
+    vencedor = 2
+    break  
+  if vencedor == 1:
+   return 1
+  if vencedor == None:
+   return 0 
+  return -1
+ 
+ 
+ def jaAcabou(self, tabuleiro):
+  #Checa se o jogo foi finalizado. Isto acontece se um dos jogadores completou a 
+  #sequência contínua de 3 símbolos ou se a matriz está cheia.
+  linhas_vitoria = list(self.end_estado_jogo)
+  gameover = True
+  for i in range(3):
+   for j in range(3):
+    if(tabuleiro[i - 1][j - 1] == 0):
+     gameover = False
+  for linha in linhas_vitoria:
+   linha_vencedor = [tabuleiro[x][y] for x,y in linha]
+   if linha_vencedor == [1, 1, 1] or linha_vencedor == [2, 2, 2]:
+    gameover = True
+    break
+  return gameover  
+ 
+ def max(self, tabuleiro, alfa, beta):
+  #Checa se o jogo foi finalizado (Vitória ou empate).
+  if self.jaAcabou(tabuleiro):
+   #Retorna o estado final do jogo 
+   #(+1 Vitória do PC, -1 Vitória do Humano, 0 Empate)
+   return self.resultado(tabuleiro)
+   
+  #Obtem todas as possíveis jogadas.
+  possiveis_movimentos = self.getMovimentosValidos(tabuleiro)
+  #Armazena a jogada que tem o melhor score.
+  melhorScore  = -100
+  for possivel_movimento in possiveis_movimentos:
+   novo_estado = eval(repr(tabuleiro))
+   #Telefone joga.
+   px,py = possivel_movimento
+   novo_estado[px][py] = 1
+   #Obtém o mínimo do próximo nivel (MIN).
+   score = self.min(novo_estado, alfa, beta)
+   #Pega o maior score dos piores analisados.
+   if score >= melhorScore:
+    melhorScore = score
+    alfa = melhorScore
+   if alfa >= beta:
+       return alfa
+   
+  return melhorScore
+  
+ 
+ def min(self, tabuleiro, alfa, beta):
+  #Checa se o jogo foi finalizado (Vitória ou empate).
+  if self.jaAcabou(tabuleiro):
+   #Retorna o estado final do jogo 
+   #(+1 Vitória do PC, -1 Vitória do Humano, 0 Empate)
+   return self.resultado(tabuleiro)
+  
+  #Obtém todas as possíveis jogadas.
+  possiveis_movimentos = self.getMovimentosValidos(tabuleiro)
+  #Armazena a jogada que tem o pior score.
+  melhorScore = 100
+  for possivel_movimento in possiveis_movimentos:
+   novo_estado = eval(repr(tabuleiro))
+   #Jogador joga.
+   px,py = possivel_movimento
+   novo_estado[px][py] = 2
+   #Obtém o máximo do próximo nível (MAX).
+   score = self.max(novo_estado, alfa, beta)
+   #Pega o menor score dos melhores analisados.
+   if score <= melhorScore:
+    melhorScore = score
+    beta = melhorScore
+   if alfa >= beta:
+       return beta
+  return melhorScore
+
+ def decisaoPC(self):
+  #Testa todas jogadas possíveis.
+  possiveis_movimentos = self.getMovimentosValidos(estado_jogo)
+  #Armazena a jogada que tem o melhor score.
+  melhorScore = -100
+  alfa = -100
+  beta = 100
+  #Se possui mais de uma jogada disponível.
+  if len(possiveis_movimentos) > 1:
+   for possivel_movimento in possiveis_movimentos:
+    novo_estado = eval(repr(estado_jogo))
+    #Inicia com a jogada do PC.
+    px, py = possivel_movimento
+    novo_estado[px][py] = 1
+    #Obtém o mínimo do próximo nivel (MIN).
+    score = self.min(novo_estado, alfa, beta)
+    #Pega o maior score dos piores analisados.
+    if score >= melhorScore:
+     movimento = possivel_movimento
+     melhorScore = score
+    if alfa >= beta:
+        break
+  else:
+   #Apenas uma única jogada, esta será a jogada do PC.
+   movimento = possiveis_movimentos[0]
+   
+  return movimento
+
+ def decisaoPC2(self):
+  #Testa todas jogadas possíveis.
+  possiveis_movimentos = self.getMovimentosValidos(estado_jogo)
+  #Armazena a jogada que tem o melhor score.
+  melhorScore = 100
+  alfa = -100
+  beta = 100
+  #Se possui mais de uma jogada disponível.
+  if len(possiveis_movimentos) > 1:
+   for possivel_movimento in possiveis_movimentos:
+    novo_estado = eval(repr(estado_jogo))
+    #Inicia com a jogada do PC.
+    px,py = possivel_movimento
+    novo_estado[px][py] = 2
+    #Obtém o máximo do próximo nivel (max).
+    score = self.max(novo_estado, alfa, beta)
+    #Pega o maior score dos piores analisados.
+    if score <= melhorScore:
+     movimento = possivel_movimento
+     melhorScore = score
+    if alfa >= beta:
+        break 
+  else:
+   #Apenas uma única jogada, esta será a jogada do PC.
+   movimento = possiveis_movimentos[0]
+   
+  return movimento
+     
+ def PC(self):
+  global estado_jogo
+  rodada = 1
+  px,py = self.decisaoPC()
+  estado_jogo[px][py] = 1
+  rodada = 2
+  return estado_jogo
+
+
+ def jogador(self, px, py):
+  global estado_jogo
+  estado_jogo[px][py] = 2
+  return estado_jogo
+
+ def jogador_inteligente(self):
+  global estado_jogo
+  rodada = 1
+  px,py = self.decisaoPC2()
+  estado_jogo[px][py] = 2
+  rodada = 2
+  return estado_jogo
+
+def imprimeTabuleiro(tabuleiro):
+    for i in range(len(tabuleiro)):
+        tmp = tabuleiro[i].copy()
+        for j in range(len(tmp)):
+            if tmp[j] == 0:
+                tmp[j] = " "
+            if tmp[j] == 1:
+                tmp[j] = "X"
+            if tmp[j] == 2:
+                tmp[j] = "O"
+        if i == 1:
+            #print("_________")
+            print("---------")
+            print(tmp[0] + " " + "| " + tmp[1] + " |" + " " + tmp[2])
+            #print("_________")
+            print("---------")
+        else:
+            print(tmp[0] + " " + "| " + tmp[1] + " |" + " " + tmp[2])
+     
+jogo = jogodavelha()
+jogo.__init__()
+
+numeroJogadas = 1
+
+print("#----------jogo da velha------------#")
+print("            |         |              ")   
+print("      ______|_________|_______       ") 
+print("            |         |              ")   
+print("      ______|_________|_______       ")   
+print("            |         |              ")
+print("            |         |              ")   
+print("#-----------------------------------#") 
+
+modo = int(input("1. Para jogar contra o PC\n2. PC vs PC\nDigite a opção: "))
+comeco = time.time()
+while 1:
+    if modo == 1:
+        a, b = input("Digite posição no tabuleiro: ").split()
+        a = int(a)
+        b = int(b)
+        jogo.jogador(a, b)
+        print("Jogada %d:" % numeroJogadas)
+        numeroJogadas += 1
+        imprimeTabuleiro(estado_jogo)
+        print("\n")
+        if jogo.jaAcabou(estado_jogo) == True:
+            break
+         
+        jogo.PC()
+        print("Jogada %d:" % numeroJogadas)
+        numeroJogadas += 1
+        imprimeTabuleiro(estado_jogo)
+        print("\n")
+        if jogo.jaAcabou(estado_jogo) == True:
+            break
+        
+    if modo == 2:
+        jogo.PC()
+        print("Jogada %d:" % numeroJogadas)
+        numeroJogadas += 1
+        imprimeTabuleiro(estado_jogo)
+        print("\n")
+        if jogo.jaAcabou(estado_jogo) == True:
+            break
+        
+        jogo.jogador_inteligente()
+        print("Jogada %d:" % numeroJogadas)
+        numeroJogadas += 1
+        imprimeTabuleiro(estado_jogo)
+        print("\n")
+        if jogo.jaAcabou(estado_jogo) == True:
+            break
+        
+ganhou = jogo.resultado(estado_jogo)
+fim = time.time()
+if ganhou == 0:
+    print("A partida terminou empatada!")
+else:
+    print("Jogador %d venceu" % ganhou)
+print("Tempo de execução: %.05fs" % (fim - comeco))
